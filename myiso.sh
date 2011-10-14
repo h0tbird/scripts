@@ -6,6 +6,8 @@
 
 if [ $# -ne 1 ]; then echo "Usage: `basename $0` [1|2|3|4|5|6]"; exit; fi
 
+set -e
+
 #------------------------------------------------------------------------------
 # Variables:
 #------------------------------------------------------------------------------
@@ -27,6 +29,7 @@ packages="ruby libselinux-ruby augeas-libs"
 #------------------------------------------------------------------------------
 
 kickstart="install\n
+text\n
 cdrom\n
 lang en_US.UTF-8\n
 keyboard es\n
@@ -35,6 +38,8 @@ rootpw  password\n
 firewall --disabled\n
 authconfig --enableshadow --passalgo=sha512 --enablefingerprint\n
 selinux --disabled\n
+services --disabled auditd,fcoe,ip6tables,iptables,iscsi,iscsid,lldpad,netfs,nfslock,rpcbind,rpcgssd,rpcidmapd,udev-post,lvm2-monitor\n
+services --enabled puppet\n
 timezone --utc Europe/Madrid\n
 bootloader --location=mbr --driveorder=sda --append=\"crashkernel=auto rhgb quiet\"\n
 autopart\n
