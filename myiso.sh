@@ -39,7 +39,6 @@ firewall --disabled\n
 authconfig --enableshadow --passalgo=sha512 --enablefingerprint\n
 selinux --disabled\n
 services --disabled auditd,fcoe,ip6tables,iptables,iscsi,iscsid,lldpad,netfs,nfslock,rpcbind,rpcgssd,rpcidmapd,udev-post,lvm2-monitor\n
-services --enabled puppet\n
 timezone --utc Europe/Madrid\n
 bootloader --location=mbr --driveorder=sda --append=\"crashkernel=auto rhgb quiet\"\n
 clearpart --all --drives=sda\n
@@ -50,6 +49,10 @@ volgroup vg0 --pesize=4096 pv.0\n
 logvol / --fstype=ext4 --name=lv0 --vgname=vg0 --size=2048 --grow --maxsize=5120\n
 %packages --nobase\n
 puppet\n
+%post\n
+sed -i 's/timeout=./timeout=0/' /boot/grub/grub.conf\n
+sed -i 's/ rhgb//' /boot/grub/grub.conf\n
+echo \"91.121.159.192 puppet\" >> /etc/hosts\n
 %end\n"
 
 #------------------------------------------------------------------------------
