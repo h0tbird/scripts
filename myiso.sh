@@ -42,12 +42,13 @@ services --disabled auditd,fcoe,ip6tables,iptables,iscsi,iscsid,lldpad,netfs,nfs
 services --enabled puppet\n
 timezone --utc Europe/Madrid\n
 bootloader --location=mbr --driveorder=sda --append=\"crashkernel=auto rhgb quiet\"\n
-autopart\n
 clearpart --all --drives=sda\n
 ignoredisk --only-use=sda\n
-repo --name=\"CentOS\" --baseurl=file:///mnt/source --cost=100\n
+part /boot --fstype=ext4 --size 200\n
+part pv.0 --grow --size=1\n
+volgroup vg0 --pesize=4096 pv.0\n
+logvol / --fstype=ext4 --name=lv0 --vgname=vg0 --size=2048 --grow --maxsize=5120\n
 %packages --nobase\n
-@core\n
 puppet\n
 %end\n"
 
