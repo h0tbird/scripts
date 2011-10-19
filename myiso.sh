@@ -34,21 +34,21 @@ puppet="[main]\n
     vardir     = /var/lib/puppet\n
     logdir     = /var/log/puppet\n
     rundir     = /var/run/puppet\n
-    ssldir     = \$vardir/ssl\n
+    ssldir     = \\\$vardir/ssl\n
     pluginsync = true\n
 \n
 [agent]\n
 \n
-    classfile     = \$vardir/classes.txt\n
-    localconfig   = \$vardir/localconfig\n
-    graphdir      = \$vardir/state/graphs\n
+    classfile     = \\\$vardir/classes.txt\n
+    localconfig   = \\\$vardir/localconfig\n
+    graphdir      = \\\$vardir/state/graphs\n
     graph         = true\n
     factsignore   = .svn CVS .git *.markdown .*.swp\n
     pluginsignore = .svn CVS .git *.markdown .*.swp\n
 \n
 [master]\n
 \n
-    modulepath = \$confdir/modules:\$confdir/roles\n"
+    modulepath = \\\$confdir/modules:\\\$confdir/roles\n"
 
 #------------------------------------------------------------------------------
 # kickstart.cfg
