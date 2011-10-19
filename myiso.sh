@@ -25,6 +25,32 @@ isl="${tmp}/isolinux"
 packages="ruby libselinux-ruby augeas-libs"
 
 #------------------------------------------------------------------------------
+# puppet.conf
+#------------------------------------------------------------------------------
+
+puppet="[main]\n
+\n
+    confdir    = /etc/puppet\n
+    vardir     = /var/lib/puppet\n
+    logdir     = /var/log/puppet\n
+    rundir     = /var/run/puppet\n
+    ssldir     = \$vardir/ssl\n
+    pluginsync = true\n
+\n
+[agent]\n
+\n
+    classfile     = \$vardir/classes.txt\n
+    localconfig   = \$vardir/localconfig\n
+    graphdir      = \$vardir/state/graphs\n
+    graph         = true\n
+    factsignore   = .svn CVS .git *.markdown .*.swp\n
+    pluginsignore = .svn CVS .git *.markdown .*.swp\n
+\n
+[master]\n
+\n
+    modulepath = \$confdir/modules:\$confdir/roles\n"
+
+#------------------------------------------------------------------------------
 # kickstart.cfg
 #------------------------------------------------------------------------------
 
@@ -53,6 +79,7 @@ puppet\n
 sed -i 's/timeout=./timeout=0/' /boot/grub/grub.conf\n
 sed -i 's/ rhgb//' /boot/grub/grub.conf\n
 echo \"91.121.159.192 puppet\" >> /etc/hosts\n
+echo -e \"${puppet}\" > /etc/puppet/puppet.conf\n
 %end\n"
 
 #------------------------------------------------------------------------------
