@@ -24,8 +24,9 @@ set -e
 #------------------------------------------------------------------------------
 
 arch='x86_64'
-iso="CentOS-6.0-${arch}-minimal.iso"
-url="http://sunsite.rediris.es/mirror/CentOS/6.0/isos/${arch}/${iso}"
+release='6.1'
+iso="CentOS-${release}-${arch}-minimal.iso"
+url="http://sunsite.rediris.es/mirror/CentOS/${release}/isos/${arch}/${iso}"
 mnt='/mnt/CentOS'
 tmp='/tmp/CentOS'
 
