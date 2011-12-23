@@ -24,7 +24,7 @@ set -e
 #------------------------------------------------------------------------------
 
 arch='x86_64'
-release='6.1'
+release='6.2'
 iso="CentOS-${release}-${arch}-minimal.iso"
 url="http://sunsite.rediris.es/mirror/CentOS/${release}/isos/${arch}/${iso}"
 mnt='/mnt/CentOS'
@@ -176,12 +176,11 @@ case "$1" in
     #-----------------------------------------------------------
 
     4) cd ${isl}
-       gunzip initrd.img --suffix .img
        mkdir cpio-initrd; cd cpio-initrd
-       cpio -id < ../initrd
+       xz -d ../initrd.img -c | cpio -id
        echo -e ${kickstart} > kickstart.cfg
        find . | cpio --create --format='newc' > ../initrd
-       gzip --suffix .img ../initrd
+       rm -f ../initrd.img; gzip --suffix .img ../initrd
        cd ..; rm -rf cpio-initrd
        echo -e ${isolinux} > isolinux.cfg
        ;;
