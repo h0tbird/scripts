@@ -10,7 +10,8 @@
 # --cert /etc/pki/ec2/my.cert \
 # --key /etc/pki/ec2/my.key \
 # --akey yyyyyyyyyy \
-# --skey zzzzzzzzzz
+# --skey zzzzzzzzzz \
+# --sshk /root/.ssh/pub.key
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -37,6 +38,7 @@ while [ $# -gt 0 ]; do
         --key)         key=$2;                                  shift 2 ;;
         --akey)        akey=$2;                                 shift 2 ;;
         --skey)        skey=$2;                                 shift 2 ;;
+        --sshk)        sshk=$2;                                 shift 2 ;;
 	*)             echo "$0: Unrecognized option: $1" >&2;  exit 1;
 
     esac
@@ -58,7 +60,8 @@ true ${arch:?} \
      ${cert:?} \
      ${key:?} \
      ${akey:?} \
-     ${skey:?}
+     ${skey:?} \
+     ${sshk:?}
 
 case $arch in
     i386|x86_64);;
@@ -109,7 +112,7 @@ export JAVA_HOME=/etc/alternatives/jre
 export PATH=$PATH:$EC2_HOME/bin
 
 #------------------------------------------------------------------------------
-# Create a file to host the AMI and make and mount the root file system:
+# Create a file to host the AMI. Make and mount the root file system:
 #------------------------------------------------------------------------------
 
 image=${imgdir}/${bucket}; mkdir -p ${image}
@@ -221,16 +224,12 @@ EOF
 chmod 644 ${image}/etc/sysconfig/network-scripts/ifcfg-eth0
 
 #------------------------------------------------------------------------------
-# Put the ssh key in place:
+# Authorized ssh keys:
 #------------------------------------------------------------------------------
 
 mkdir ${image}/root/.ssh
 chmod 700 ${image}/root/.ssh
-
-cat << EOF > ${image}/root/.ssh/authorized_keys
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC29B/tSPPlRaoAVhUDHHosg2AyGsTEP8w6MMNzNbZiR6XS++WxPWDUrYGIsBx1ESIPkbsbyT77L6zuH8DgN+IuuPbWBUxqEr3/Tba96guaiwSbKYGf1v7CpPNQeGJNvflqZsn4JnJDXKvjuAvEUGLiSr3us9i/uEN7+7kU1MMzCZDxVb+0INeKRquge/FnQveAHVEGzJGEEPKOIQu5y1nl8/qS8KyaDz0XBM2CM2VjqWXqEPKGDQJtjK4n28JBvSOBBwUDGzXi/qmbDPSFjOmxDRB48JXQ+ywZca9pbph/o+JmdCirgOIpn0LKrxodNOSWUkn2islkZkpY6/cS5hi3 popapp
-EOF
-
+cat ${sshk} >> ${image}/root/.ssh/authorized_keys
 chmod 600 ${image}/root/.ssh/authorized_keys
 
 #------------------------------------------------------------------------------
