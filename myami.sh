@@ -4,7 +4,7 @@
 # ./myami.sh \
 # --arch x86_64 \
 # --bucket base \
-# --location EU \
+# --region eu-west-1 \
 # --size 768 \
 # --user xxxxxxxxxx \
 # --cert /etc/pki/ec2/my.cert \
@@ -30,7 +30,7 @@ while [ $# -gt 0 ]; do
         --charmap)     charmap=$2;                              shift 2 ;;
         --imgdir)      imgdir=$2;                               shift 2 ;;
         --bucket)      bucket=$2;                               shift 2 ;;
-        --location)    location=$2;                             shift 2 ;;
+        --region)      region=$2;                               shift 2 ;;
         --volume)      volume=$2;                               shift 2 ;;
         --size)        size=$2;                                 shift 2 ;;
         --user)        user=$2;                                 shift 2 ;;
@@ -54,7 +54,7 @@ true ${arch:?} \
      ${charmap:=UTF-8} \
      ${imgdir:=/tmp/ami} \
      ${bucket:?} \
-     ${location:?} \
+     ${region:?} \
      ${size:=2048} \
      ${user:?} \
      ${cert:?} \
@@ -66,11 +66,6 @@ true ${arch:?} \
 case $arch in
     i386|x86_64);;
     *)echo "${0}: Unrecognized --arch ${arch}" >&2; exit 1;
-esac
-
-case $location in
-    EU|US);;
-    *)echo "${0}: Unrecognized --location ${location}" >&2; exit 1;
 esac
 
 #------------------------------------------------------------------------------
@@ -100,7 +95,7 @@ echo -e user:"\t\t${user}"
 echo -e cert:"\t\t$(basename ${cert})"
 echo -e key:"\t\t$(basename ${key})"
 echo -e bucket:"\t\t${bucket}"
-echo -e location:"\t${location}"
+echo -e region:"\t${region}"
 echo; sleep 2
 
 #------------------------------------------------------------------------------
@@ -263,7 +258,7 @@ ec2-upload-bundle \
 -m ${image}-bundle/${bucket}.fs.manifest.xml \
 -a ${akey} \
 -s ${skey} \
---location ${location}
+--location ${region}
 
 #------------------------------------------------------------------------------
 # ec2-register:
@@ -273,4 +268,5 @@ ec2-register \
 -K ${key} \
 -C ${cert} \
 -n "CentOS 6 Core" \
+--region ${region} \
 ${bucket}/${bucket}.fs.manifest.xml
