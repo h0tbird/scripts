@@ -2,8 +2,9 @@
 
 #------------------------------------------------------------------------------
 # ./myami.sh \
-# --arch x86_64 \
-# --bucket base \
+# --arch i686 \
+# --bucket my-ami-base \
+# --location EU \
 # --region eu-west-1 \
 # --size 768 \
 # --user xxxxxxxxxx \
@@ -15,7 +16,7 @@
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Command line sanity check and argument control:
+# Parse the command-line:
 #------------------------------------------------------------------------------
 
 set -e
@@ -30,6 +31,7 @@ while [ $# -gt 0 ]; do
         --charmap)     charmap=$2;                              shift 2 ;;
         --imgdir)      imgdir=$2;                               shift 2 ;;
         --bucket)      bucket=$2;                               shift 2 ;;
+        --location)    location=$2;                             shift 2 ;;
         --region)      region=$2;                               shift 2 ;;
         --volume)      volume=$2;                               shift 2 ;;
         --size)        size=$2;                                 shift 2 ;;
@@ -54,6 +56,7 @@ true ${arch:?} \
      ${charmap:=UTF-8} \
      ${imgdir:=/tmp/ami} \
      ${bucket:?} \
+     ${location:?} \
      ${region:?} \
      ${size:=2048} \
      ${user:?} \
@@ -63,9 +66,14 @@ true ${arch:?} \
      ${skey:?} \
      ${sshk:?}
 
+#------------------------------------------------------------------------------
+# Argument validation:
+#------------------------------------------------------------------------------
+
 case $arch in
-    i386|x86_64);;
-    *)echo "${0}: Unrecognized --arch ${arch}" >&2; exit 1;
+    'i686') arch2="i386";;
+    'x86_64') arch2="x86_64";;
+    *) echo "${0}: Unrecognized --arch ${arch}" >&2; exit 1;
 esac
 
 #------------------------------------------------------------------------------
@@ -94,8 +102,9 @@ echo
 echo -e user:"\t\t${user}"
 echo -e cert:"\t\t$(basename ${cert})"
 echo -e key:"\t\t$(basename ${key})"
-echo -e bucket:"\t\t${bucket}"
-echo -e region:"\t${region}"
+echo -e bucket:"\t\t${bucket}-${arch}"
+echo -e location:"\t${location}"
+echo -e region:"\t\t${region}"
 echo; sleep 2
 
 #------------------------------------------------------------------------------
@@ -110,7 +119,7 @@ export PATH=$PATH:$EC2_HOME/bin
 # Create a file to host the AMI. Make and mount the root file system:
 #------------------------------------------------------------------------------
 
-image=${imgdir}/${bucket}; mkdir -p ${image}
+image=${imgdir}/base; mkdir -p ${image}
 dd if=/dev/zero of=${image}.fs bs=1M count=${size}
 mke2fs -F -j -t ext4 ${image}.fs
 mount -o loop ${image}.fs ${image}
@@ -154,7 +163,7 @@ chmod 644 ${image}/etc/fstab
 #------------------------------------------------------------------------------
 
 setarch ${arch} rpm --root ${image} --initdb
-curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.2/os/${arch}/Packages/centos-release-6-2.el6.centos.7.${arch}.rpm"
+curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.2/os/${arch2}/Packages/centos-release-6-2.el6.centos.7.${arch}.rpm"
 setarch ${arch} rpm --nosignature --root ${image} -ivh --nodeps /tmp/temp.rpm
 rm -rf /tmp/temp.rpm
 
@@ -163,8 +172,9 @@ rm -rf /tmp/temp.rpm
 #------------------------------------------------------------------------------
 
 setarch ${arch} yum --nogpgcheck --installroot=${image} -y groupinstall Core
-setarch ${arch} rpm --root ${image} --rebuilddb
 setarch ${arch} chroot ${image} yum -y clean all
+setarch ${arch} rm -f ${image}/var/lib/rpm/__db*
+setarch ${arch} rpm --root ${image} --rebuilddb
 
 #------------------------------------------------------------------------------
 # Install Amazon EC2 API tools:
@@ -242,7 +252,7 @@ umount -d ${image}
 mkdir ${image}-bundle
 
 ec2-bundle-image \
--r ${arch} \
+-r ${arch2} \
 -u ${user} \
 -i ${image}.fs \
 -k ${key} \
@@ -254,11 +264,11 @@ ec2-bundle-image \
 #------------------------------------------------------------------------------
 
 ec2-upload-bundle \
--b ${bucket} \
--m ${image}-bundle/${bucket}.fs.manifest.xml \
+-b ${bucket}-${arch} \
+-m ${image}-bundle/base.fs.manifest.xml \
 -a ${akey} \
 -s ${skey} \
---location ${region}
+--location ${location}
 
 #------------------------------------------------------------------------------
 # ec2-register:
@@ -267,6 +277,6 @@ ec2-upload-bundle \
 ec2-register \
 -K ${key} \
 -C ${cert} \
--n "CentOS 6 Core" \
+-n "CentOS 6 ${arch}" \
 --region ${region} \
-${bucket}/${bucket}.fs.manifest.xml
+${bucket}-${arch}/base.fs.manifest.xml
