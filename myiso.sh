@@ -120,7 +120,6 @@ logvol / --fstype=ext4 --name=lv0 --vgname=vg0 --size=2048 --grow --maxsize=5120
 puppet\n\
 %post\n\
 sed -i 's/timeout=./timeout=0/' /boot/grub/grub.conf\n\
-sed -i 's/ rhgb//' /boot/grub/grub.conf\n\
 echo \"91.121.159.192 puppet\" >> /etc/hosts\n\
 echo -e \"${puppet}\" > /etc/puppet/puppet.conf\n\
 %end\n\
