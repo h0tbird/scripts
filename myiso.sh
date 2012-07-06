@@ -159,7 +159,9 @@ case "$1" in
     #-------------------------------------------------------------------
 
     2) echo -e ${yumconf} > /tmp/yum.conf
-       grep "mandatory" ${dat}/*minimal*.xml | awk -F '[<|>]' '{print $3}' | xargs repotrack -c /tmp/yum.conf -p ${pkg} puppet
+       grep "mandatory" ${dat}/*minimal*.xml | \
+       awk -F '[<|>]' '{print $3}' | \
+       xargs repotrack -c /tmp/yum.conf -p ${pkg} puppet
        ;;
 
     #-----------------------------------
@@ -189,7 +191,13 @@ case "$1" in
     # Build the final ISO file:
     #---------------------------
 
-    5) mkisofs -l -J -R -r -T -o /media/sf_shared/boot.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table ${tmp}
+    5) mkisofs -l -J -R -r -T -o \
+       /media/sf_shared/boot.iso \
+       -b isolinux/isolinux.bin \
+       -c isolinux/boot.cat \
+       -no-emul-boot \
+       -boot-load-size 4 \
+       -boot-info-table ${tmp}
        sync
        ;;
 esac
