@@ -195,6 +195,7 @@ case "$1" in
        /media/sf_shared/boot.iso \
        -b isolinux/isolinux.bin \
        -c isolinux/boot.cat \
+       -input-charset default \
        -no-emul-boot \
        -boot-load-size 4 \
        -boot-info-table ${tmp}
