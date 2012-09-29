@@ -109,9 +109,9 @@ authconfig --enableshadow --passalgo=sha512 --enablefingerprint\n\
 selinux --disabled\n\
 services --disabled auditd,fcoe,ip6tables,iptables,iscsi,iscsid,lldpad,netfs,nfslock,rpcbind,rpcgssd,rpcidmapd,udev-post,lvm2-monitor\n\
 timezone --utc Europe/Madrid\n\
-bootloader --location=mbr --driveorder=sda --append=\"crashkernel=auto rhgb quiet\"\n\
-clearpart --all --drives=sda\n\
-ignoredisk --only-use=sda\n\
+bootloader --location=mbr --driveorder=sda,vda --append=\"crashkernel=auto rhgb quiet\"\n\
+clearpart --all --drives=sda,vda\n\
+ignoredisk --only-use=sda,vda\n\
 part /boot --fstype=ext4 --size 200\n\
 part pv.0 --grow --size=1\n\
 volgroup vg0 --pesize=4096 pv.0\n\
