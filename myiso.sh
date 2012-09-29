@@ -109,16 +109,19 @@ authconfig --enableshadow --passalgo=sha512 --enablefingerprint\n\
 selinux --disabled\n\
 services --disabled auditd,fcoe,ip6tables,iptables,iscsi,iscsid,lldpad,netfs,nfslock,rpcbind,rpcgssd,rpcidmapd,udev-post,lvm2-monitor\n\
 timezone --utc Europe/Madrid\n\
-bootloader --location=mbr --driveorder=sda,vda --append=\"crashkernel=auto rhgb quiet\"\n\
-clearpart --all --drives=sda,vda\n\
-ignoredisk --only-use=sda,vda\n\
+bootloader --location=mbr --driveorder=vda,sda,hda --append=\"crashkernel=auto rhgb quiet\"\n\
+%include /tmp/part-include\n\
 part /boot --fstype=ext4 --size 200\n\
 part pv.0 --grow --size=1\n\
 volgroup vg0 --pesize=4096 pv.0\n\
 logvol / --fstype=ext4 --name=lv0 --vgname=vg0 --size=2048 --grow --maxsize=5120\n\
-%packages --nobase\n\
+\n%packages --nobase\n\
 puppet\n\
-%post\n\
+\n%pre\n\
+for i in /sys/block/[hsv]da; do d=\"\$(basename \$i)\"; done\n\
+echo \"clearpart --all --drives=\$d\" > /tmp/part-include\n\
+echo \"ignoredisk --only-use=\$d\" >> /tmp/part-include\n\
+\n%post\n\
 sed -i 's/timeout=./timeout=0/' /boot/grub/grub.conf\n\
 echo \"91.121.159.192 puppet\" >> /etc/hosts\n\
 echo -e \"${puppet}\" > /etc/puppet/puppet.conf\n\
