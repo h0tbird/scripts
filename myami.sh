@@ -112,7 +112,7 @@ echo; sleep 2
 #------------------------------------------------------------------------------
 
 export EC2_HOME=/usr/local/ec2/apitools
-export JAVA_HOME=/etc/alternatives/jre
+export JAVA_HOME=/usr/java/default
 export PATH=$PATH:$EC2_HOME/bin
 
 #------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ mkdir -p ${image}/etc/ec2
 touch ${image}/var/log/yum.log; chmod 600 ${image}/var/log/yum.log
 touch ${image}/etc/mtab; chmod 644 ${image}/etc/mtab
 
-for i in console null zero; do /sbin/MAKEDEV -d ${image}/dev -x ${i}; done
+for i in console null zero urandom; do /sbin/MAKEDEV -d ${image}/dev -x ${i}; done
 mount -t proc none ${image}/proc
 
 #------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ chmod 644 ${image}/etc/fstab
 #------------------------------------------------------------------------------
 
 setarch ${arch} rpm --root ${image} --initdb
-curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.2/os/${arch2}/Packages/centos-release-6-2.el6.centos.7.${arch}.rpm"
+curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.4/os/${arch2}/Packages/centos-release-6-4.el6.centos.10.${arch}.rpm"
 setarch ${arch} rpm --nosignature --root ${image} -ivh --nodeps /tmp/temp.rpm
 rm -rf /tmp/temp.rpm
 
