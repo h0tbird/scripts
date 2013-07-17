@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------
 # ./myami.sh \
 # --arch i686 \
-# --bucket my-ami-base \
+# --bucket centos6-32bit \
 # --location EU \
 # --region eu-west-1 \
 # --size 768 \
@@ -102,7 +102,7 @@ echo
 echo -e user:"\t\t${user}"
 echo -e cert:"\t\t$(basename ${cert})"
 echo -e key:"\t\t$(basename ${key})"
-echo -e bucket:"\t\t${bucket}-${arch}"
+echo -e bucket:"\t\t${bucket}"
 echo -e location:"\t${location}"
 echo -e region:"\t\t${region}"
 echo; sleep 2
@@ -264,7 +264,7 @@ ec2-bundle-image \
 #------------------------------------------------------------------------------
 
 ec2-upload-bundle \
--b ${bucket}-${arch} \
+-b ${bucket} \
 -m ${image}-bundle/base.fs.manifest.xml \
 -a ${akey} \
 -s ${skey} \
@@ -279,4 +279,4 @@ ec2-register \
 -C ${cert} \
 -n "CentOS 6 ${arch}" \
 --region ${region} \
-${bucket}-${arch}/base.fs.manifest.xml
+${bucket}/base.fs.manifest.xml
