@@ -241,14 +241,9 @@ setarch ${arch} chroot ${image} cp /usr/share/zoneinfo/${timezone} /etc/localtim
 setarch ${arch} chroot ${image} localedef -c --inputfile=${locale} --charmap=${charmap} ${locale}.${charmap}
 
 #------------------------------------------------------------------------------
-# Xen specific instructions:
+# Other stuff:
 #------------------------------------------------------------------------------
 
-cat << EOF > ${image}/etc/ld.so.conf.d/libc6-xen.conf
-hwcap 0 nosegneg
-EOF
-
-chmod 644 ${image}/etc/ld.so.conf.d/libc6-xen.conf
 setarch ${arch} chroot ${image} ldconfig
 rm -f ${image}/etc/event.d/tty[2-6]
 
