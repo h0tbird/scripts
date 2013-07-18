@@ -6,13 +6,13 @@
 # --bucket centos6-32bit \
 # --location EU \
 # --region eu-west-1 \
-# --size 768 \
+# --size 1024 \
 # --user xxxxxxxxxx \
-# --cert /etc/pki/ec2/my.cert \
-# --key /etc/pki/ec2/my.key \
+# --cert /path/to/my/cert \
+# --key /path/to/my/key \
 # --akey yyyyyyyyyy \
 # --skey zzzzzzzzzz \
-# --sshk /root/.ssh/pub.key
+# --sshk /path/to/my/pub/ssh/key
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -71,9 +71,35 @@ true ${arch:?} \
 #------------------------------------------------------------------------------
 
 case $arch in
-    'i686') arch2="i386";;
-    'x86_64') arch2="x86_64";;
+
+    'i686')   arch2="i386"
+
+              case $region in
+
+                  'us-east-1') aki='aki-b6aa75df';;
+                  'us-west-1') aki='aki-f57e26b0';;
+                  'eu-west-1') aki='aki-75665e01';;
+
+                  *) echo "${0}: Unrecognized --region ${region}" >&2; exit 1;
+
+              esac
+              ;;
+
+    'x86_64') arch2="x86_64"
+
+              case $region in
+
+                  'us-east-1') aki='aki-88aa75e1';;
+                  'us-west-1') aki='aki-f77e26b2';;
+                  'eu-west-1') aki='aki-71665e05';;
+
+                  *) echo "${0}: Unrecognized --region ${region}" >&2; exit 1;
+
+              esac
+              ;;
+
     *) echo "${0}: Unrecognized --arch ${arch}" >&2; exit 1;
+
 esac
 
 #------------------------------------------------------------------------------
@@ -125,7 +151,7 @@ mke2fs -F -j -t ext4 ${image}.fs
 mount -o loop ${image}.fs ${image}
 
 #------------------------------------------------------------------------------
-# Populate /dev, /etc, /proc, /var with a minimal set of files:
+# Populate /dev, /etc, /proc, /var, /boot with a minimal set of files:
 #------------------------------------------------------------------------------
 
 mkdir -p ${image}/proc
@@ -133,12 +159,25 @@ mkdir -p ${image}/etc
 mkdir -p ${image}/var/lib/rpm
 mkdir -p ${image}/var/log
 mkdir -p ${image}/etc/ec2
+mkdir -p ${image}/boot/grub
 
 touch ${image}/var/log/yum.log; chmod 600 ${image}/var/log/yum.log
 touch ${image}/etc/mtab; chmod 644 ${image}/etc/mtab
 
 for i in console null zero urandom; do /sbin/MAKEDEV -d ${image}/dev -x ${i}; done
 mount -t proc none ${image}/proc
+
+#------------------------------------------------------------------------------
+# Setup grub:
+#------------------------------------------------------------------------------
+
+cat << EOF > ${image}/boot/grub/menu.lst
+default 0
+timeout 3
+title EC2
+root (hd0)
+kernel /boot/vmlinuz-2.6.32-358.14.1.el6.${arch} root=/dev/xvda1 rootfstype=ext4
+EOF
 
 #------------------------------------------------------------------------------
 # Create the fstab file within the /etc directory. Do it before you run yum
@@ -168,10 +207,11 @@ setarch ${arch} rpm --nosignature --root ${image} -ivh --nodeps /tmp/temp.rpm
 rm -rf /tmp/temp.rpm
 
 #------------------------------------------------------------------------------
-# Install the core operating system:
+# Install the core operating system and its kernel:
 #------------------------------------------------------------------------------
 
 setarch ${arch} yum --nogpgcheck --installroot=${image} -y groupinstall Core
+setarch ${arch} yum --nogpgcheck --installroot=${image} -y install kernel
 setarch ${arch} chroot ${image} yum -y clean all
 setarch ${arch} rm -f ${image}/var/lib/rpm/__db*
 setarch ${arch} rpm --root ${image} --rebuilddb
@@ -213,8 +253,15 @@ setarch ${arch} chroot ${image} ldconfig
 rm -f ${image}/etc/event.d/tty[2-6]
 
 #------------------------------------------------------------------------------
-# Configure /etc/sysconfig/network-scripts/ifcfg-eth0:
+# Configure network:
 #------------------------------------------------------------------------------
+
+cat << EOF > ${image}/etc/sysconfig/network
+NETWORKING=yes
+HOSTNAME=localhost.localdomain
+EOF
+
+chmod 644 ${image}/etc/sysconfig/network
 
 cat << EOF > ${image}/etc/sysconfig/network-scripts/ifcfg-eth0
 DEVICE=eth0
@@ -257,6 +304,7 @@ ec2-bundle-image \
 -i ${image}.fs \
 -k ${key} \
 -c ${cert} \
+--kernel ${aki} \
 -d ${image}-bundle
 
 #------------------------------------------------------------------------------
