@@ -168,30 +168,18 @@ for i in console null zero urandom; do /sbin/MAKEDEV -d ${image}/dev -x ${i}; do
 mount -t proc none ${image}/proc
 
 #------------------------------------------------------------------------------
-# Setup grub:
-#------------------------------------------------------------------------------
-
-cat << EOF > ${image}/boot/grub/menu.lst
-default 0
-timeout 3
-title EC2
-root (hd0)
-kernel /boot/vmlinuz-2.6.32-358.14.1.el6.${arch} root=/dev/xvda1 rootfstype=ext4
-EOF
-
-#------------------------------------------------------------------------------
 # Create the fstab file within the /etc directory. Do it before you run yum
 # or some packages will complain:
 #------------------------------------------------------------------------------
 
 cat << EOF > ${image}/etc/fstab
-/dev/sda1               /                       ext4    defaults 1 1
+/dev/xvde1              /                       ext4    defaults       1 1
 none                    /dev/pts                devpts  gid=5,mode=620 0 0
-none                    /dev/shm                tmpfs   defaults 0 0
-none                    /proc                   proc    defaults 0 0
-none                    /sys                    sysfs   defaults 0 0
-/dev/sda2               /mnt                    ext4    defaults 1 2
-/dev/sda3               swap                    swap    defaults 0 0
+none                    /dev/shm                tmpfs   defaults       0 0
+none                    /proc                   proc    defaults       0 0
+none                    /sys                    sysfs   defaults       0 0
+/dev/xvde2              /mnt/vol1               ext4    defaults       0 0
+/dev/xvde3              swap                    swap    defaults       0 0
 EOF
 
 chmod 644 ${image}/etc/fstab
@@ -215,6 +203,22 @@ setarch ${arch} yum --nogpgcheck --installroot=${image} -y install kernel
 setarch ${arch} chroot ${image} yum -y clean all
 setarch ${arch} rm -f ${image}/var/lib/rpm/__db*
 setarch ${arch} rpm --root ${image} --rebuilddb
+
+#------------------------------------------------------------------------------
+# Setup grub:
+#------------------------------------------------------------------------------
+
+kernel=`/bin/basename ${image}/boot/vmlinuz*`
+ramdisk=`/bin/basename ${image}/boot/initramfs*`
+
+cat << EOF > ${image}/boot/grub/menu.lst
+default 0
+timeout 0
+title CentOS
+root (hd0)
+kernel /boot/${kernel} ro root=/dev/xvde1 rd_NO_PLYMOUTH
+initrd /boot/${ramdisk}
+EOF
 
 #------------------------------------------------------------------------------
 # Install Amazon EC2 API tools:
@@ -322,4 +326,5 @@ ec2-register \
 -C ${cert} \
 -n "CentOS 6 ${arch}" \
 --region ${region} \
+--kernel ${aki} \
 ${bucket}/base.fs.manifest.xml
