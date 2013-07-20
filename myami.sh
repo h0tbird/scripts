@@ -151,7 +151,7 @@ mke2fs -F -j -t ext4 ${image}.fs
 mount -o loop ${image}.fs ${image}
 
 #------------------------------------------------------------------------------
-# Populate /dev, /etc, /proc, /var, /boot with a minimal set of files:
+# Populate /dev, /etc, /proc, /var, /boot, /mnt with a minimal set of files:
 #------------------------------------------------------------------------------
 
 mkdir -p ${image}/proc
@@ -160,6 +160,7 @@ mkdir -p ${image}/var/lib/rpm
 mkdir -p ${image}/var/log
 mkdir -p ${image}/etc/ec2
 mkdir -p ${image}/boot/grub
+mkdir -p ${image}/mnt/vol1
 
 touch ${image}/var/log/yum.log; chmod 600 ${image}/var/log/yum.log
 touch ${image}/etc/mtab; chmod 644 ${image}/etc/mtab
@@ -168,7 +169,7 @@ for i in console null zero urandom; do /sbin/MAKEDEV -d ${image}/dev -x ${i}; do
 mount -t proc none ${image}/proc
 
 #------------------------------------------------------------------------------
-# Create the fstab file within the /etc directory. Do it before you run yum
+# Create the fstab file within the /etc directory. Do it before you run YUM
 # or some packages will complain:
 #------------------------------------------------------------------------------
 
@@ -185,6 +186,7 @@ EOF
 chmod 644 ${image}/etc/fstab
 
 #------------------------------------------------------------------------------
+# Install centos-release package wich contains YUM repos configuration files.
 # $releasever and $basearch are determined within the chrooted environment so
 # we must ensure to have enough context:
 #------------------------------------------------------------------------------
@@ -245,13 +247,6 @@ setarch ${arch} chroot ${image} cp /usr/share/zoneinfo/${timezone} /etc/localtim
 setarch ${arch} chroot ${image} localedef -c --inputfile=${locale} --charmap=${charmap} ${locale}.${charmap}
 
 #------------------------------------------------------------------------------
-# Other stuff:
-#------------------------------------------------------------------------------
-
-setarch ${arch} chroot ${image} ldconfig
-rm -f ${image}/etc/event.d/tty[2-6]
-
-#------------------------------------------------------------------------------
 # Configure network:
 #------------------------------------------------------------------------------
 
@@ -273,6 +268,16 @@ IPV6INIT=no
 EOF
 
 chmod 644 ${image}/etc/sysconfig/network-scripts/ifcfg-eth0
+
+#------------------------------------------------------------------------------
+# Configure on-boot services:
+#------------------------------------------------------------------------------
+
+services=`setarch ${arch} chroot ${image} chkconfig --list | grep '3:on' | awk '{print $1}'`
+for i in ${services}; do setarch ${arch} chroot ${image} chkconfig ${i} off; done
+
+services='crond iptables network rsyslog sshd'
+for i in ${services}; do setarch ${arch} chroot ${image} chkconfig ${i} on; done
 
 #------------------------------------------------------------------------------
 # Authorized ssh keys:
