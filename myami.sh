@@ -16,16 +16,20 @@
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Parse the command-line:
+# Halt on any error:
 #------------------------------------------------------------------------------
 
 set -e
+
+#------------------------------------------------------------------------------
+# Parse the command-line:
+#------------------------------------------------------------------------------
 
 while [ $# -gt 0 ]; do
 
     case $1 in
 
-        --arch)        arch=$2;                                 shift 2 ;;
+        --arch)        arch[0]=$2;                              shift 2 ;;
         --timezone)    timezone=$2;                             shift 2 ;;
         --locale)      locale=$2;                               shift 2 ;;
         --charmap)     charmap=$2;                              shift 2 ;;
@@ -50,7 +54,7 @@ done
 # Required and default parameters:
 #------------------------------------------------------------------------------
 
-true ${arch:?} \
+true ${arch[0]:?} \
      ${timezone:="Europe/Madrid"} \
      ${locale:=en_US} \
      ${charmap:=UTF-8} \
@@ -58,7 +62,7 @@ true ${arch:?} \
      ${bucket:?} \
      ${location:?} \
      ${region:?} \
-     ${size:=2048} \
+     ${size:=1024} \
      ${user:?} \
      ${cert:?} \
      ${key:?} \
@@ -70,9 +74,9 @@ true ${arch:?} \
 # Argument validation:
 #------------------------------------------------------------------------------
 
-case $arch in
+case ${arch[0]} in
 
-    'i686')   arch2="i386"
+    'i686')   arch[1]='i386'; arch[2]='32'
 
               case $region in
 
@@ -85,7 +89,7 @@ case $arch in
               esac
               ;;
 
-    'x86_64') arch2="x86_64"
+    'x86_64') arch[1]='x86_64'; arch[2]='64'
 
               case $region in
 
@@ -98,7 +102,7 @@ case $arch in
               esac
               ;;
 
-    *) echo "${0}: Unrecognized --arch ${arch}" >&2; exit 1;
+    *) echo "${0}: Unrecognized --arch ${arch[0]}" >&2; exit 1;
 
 esac
 
@@ -116,7 +120,7 @@ echo
 echo Target system
 echo -------------
 echo
-echo -e arch:"\t\t${arch}"
+echo -e arch:"\t\t${arch[0]}"
 echo -e timezone:"\t${timezone}"
 echo -e locale:"\t\t${locale}"
 echo -e charmap:"\t${charmap}"
@@ -191,20 +195,20 @@ chmod 644 ${image}/etc/fstab
 # we must ensure to have enough context:
 #------------------------------------------------------------------------------
 
-setarch ${arch} rpm --root ${image} --initdb
-curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.4/os/${arch2}/Packages/centos-release-6-4.el6.centos.10.${arch}.rpm"
-setarch ${arch} rpm --nosignature --root ${image} -ivh --nodeps /tmp/temp.rpm
+setarch ${arch[0]} rpm --root ${image} --initdb
+curl -L -o /tmp/temp.rpm "http://sunsite.rediris.es/mirror/CentOS/6.4/os/${arch[1]}/Packages/centos-release-6-4.el6.centos.10.${arch[0]}.rpm"
+setarch ${arch[0]} rpm --nosignature --root ${image} -ivh --nodeps /tmp/temp.rpm
 rm -rf /tmp/temp.rpm
 
 #------------------------------------------------------------------------------
 # Install the core operating system and its kernel:
 #------------------------------------------------------------------------------
 
-setarch ${arch} yum --nogpgcheck --installroot=${image} -y groupinstall Core
-setarch ${arch} yum --nogpgcheck --installroot=${image} -y install kernel
-setarch ${arch} chroot ${image} yum -y clean all
-setarch ${arch} rm -f ${image}/var/lib/rpm/__db*
-setarch ${arch} rpm --root ${image} --rebuilddb
+setarch ${arch[0]} yum --nogpgcheck --installroot=${image} -y groupinstall Core
+setarch ${arch[0]} yum --nogpgcheck --installroot=${image} -y install kernel
+setarch ${arch[0]} chroot ${image} yum -y clean all
+setarch ${arch[0]} rm -f ${image}/var/lib/rpm/__db*
+setarch ${arch[0]} rpm --root ${image} --rebuilddb
 
 #------------------------------------------------------------------------------
 # Setup grub:
@@ -236,15 +240,15 @@ rm -rf ${image}/tmp/ec2-api-tools.zip
 #------------------------------------------------------------------------------
 
 curl -L -o "${image}/tmp/temp.rpm" "https://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.noarch.rpm"
-setarch ${arch} yum --nogpgcheck --installroot=${image} -y install ${image}/tmp/temp.rpm
+setarch ${arch[0]} yum --nogpgcheck --installroot=${image} -y install ${image}/tmp/temp.rpm
 rm -rf ${image}/tmp/temp.rpm
 
 #------------------------------------------------------------------------------
 # Timezone, locale and charmap setup:
 #------------------------------------------------------------------------------
 
-setarch ${arch} chroot ${image} cp /usr/share/zoneinfo/${timezone} /etc/localtime
-setarch ${arch} chroot ${image} localedef -c --inputfile=${locale} --charmap=${charmap} ${locale}.${charmap}
+setarch ${arch[0]} chroot ${image} cp /usr/share/zoneinfo/${timezone} /etc/localtime
+setarch ${arch[0]} chroot ${image} localedef -c --inputfile=${locale} --charmap=${charmap} ${locale}.${charmap}
 
 #------------------------------------------------------------------------------
 # Configure network:
@@ -273,11 +277,11 @@ chmod 644 ${image}/etc/sysconfig/network-scripts/ifcfg-eth0
 # Configure on-boot services:
 #------------------------------------------------------------------------------
 
-services=`setarch ${arch} chroot ${image} chkconfig --list | grep '3:on' | awk '{print $1}'`
-for i in ${services}; do setarch ${arch} chroot ${image} chkconfig ${i} off; done
+services=`setarch ${arch[0]} chroot ${image} chkconfig --list | grep '3:on' | awk '{print $1}'`
+for i in ${services}; do setarch ${arch[0]} chroot ${image} chkconfig ${i} off; done
 
 services='crond iptables network rsyslog sshd'
-for i in ${services}; do setarch ${arch} chroot ${image} chkconfig ${i} on; done
+for i in ${services}; do setarch ${arch[0]} chroot ${image} chkconfig ${i} on; done
 
 #------------------------------------------------------------------------------
 # Authorized ssh keys:
@@ -292,7 +296,7 @@ chmod 600 ${image}/root/.ssh/authorized_keys
 # Sync and umount:
 #------------------------------------------------------------------------------
 
-sync
+sync; sync; sync
 umount -l ${image}/proc
 umount -d ${image}
 
@@ -303,7 +307,7 @@ umount -d ${image}
 mkdir ${image}-bundle
 
 ec2-bundle-image \
--r ${arch2} \
+-r ${arch[1]} \
 -u ${user} \
 -i ${image}.fs \
 -k ${key} \
@@ -329,7 +333,7 @@ ec2-upload-bundle \
 ec2-register \
 -K ${key} \
 -C ${cert} \
--n "CentOS 6 ${arch}" \
+-n "CentOS 6 ${arch[2]}bit" \
 --region ${region} \
 --kernel ${aki} \
 ${bucket}/base.fs.manifest.xml
