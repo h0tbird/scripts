@@ -24,6 +24,7 @@ for i in `cobbler repo list`; do echo -n "$i:"
 
     # Column aligned report:
     len=`echo ${#i}`; let off=55-$len
-    REP=`tail $LOGFILE | grep 'TASK'`; printf '%*s%s\n' $off "$REP"
+    REP=`tail $LOGFILE | grep 'TASK'`
+    printf '%*s%s\n' $off "$REP"
 
 done
