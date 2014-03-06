@@ -75,13 +75,13 @@ rm -rf ${target}/etc/ld.so.cache
 rm -rf ${target}/var/cache/ldconfig/*
 
 #------------------------------------------------------------------------------
-# Generate the tar file:
+# Generate a tar file and import it:
 #------------------------------------------------------------------------------
 
 tar \
 --numeric-owner \
--cf centos.tar \
--C $target .
+-c -C $target . | \
+docker import - h0tbird/centos:latest
 
 #------------------------------------------------------------------------------
 # Cleanup:
