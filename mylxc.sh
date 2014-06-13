@@ -5,6 +5,7 @@
 #------------------------------------------------------------------------------
 
 yumconf="[main]\n\
+reposdir=/dev/null\n\
 cachedir=/var/cache/yum/\$basearch/\$releasever\n\
 keepcache=0\n\
 debuglevel=2\n\
@@ -15,10 +16,22 @@ gpgcheck=1\n\
 plugins=1\n\
 installonly_limit=5\n\
 distroverpkg=centos-release\n\
-exclude=*.i?86"
+exclude=*.i?86\n\n"
+
+repos="[centos-qa-03]\n\
+name=CentOS Open QA – c7.00.03\n\
+baseurl=http://buildlogs.centos.org/c7.00.03/\n\
+enabled=1\n\
+gpgcheck=0\n\
+\n\
+[centos-qa-04]\n\
+name=CentOS Open QA – c7.00.04\n\
+baseurl=http://buildlogs.centos.org/c7.00.04/\n\
+enabled=1\n\
+gpgcheck=0"
 
 set -e
-echo -e $yumconf > /tmp/yum.conf
+echo -e "${yumconf}${repos}" > /tmp/yum.conf
 target=$(mktemp -d --tmpdir $(basename $0).XXXXXX)
 
 #------------------------------------------------------------------------------
@@ -38,6 +51,12 @@ mknod -m 666 ${target}/dev/urandom c 1 9
 mknod -m 666 ${target}/dev/zero c 1 5
 
 #------------------------------------------------------------------------------
+# Minimal core:
+#------------------------------------------------------------------------------
+
+core_packages='audit basesystem bash biosdevname coreutils cronie curl dhclient e2fsprogs filesystem glibc hostname initscripts iproute iprutils iputils kbd less man-db ncurses openssh-clients openssh-server parted passwd plymouth policycoreutils procps-ng rootfiles rpm rsyslog selinux-policy-targeted setup shadow-utils sudo systemd util-linux vim-minimal yum'
+
+#------------------------------------------------------------------------------
 # Install the core system:
 #------------------------------------------------------------------------------
 
@@ -46,7 +65,7 @@ yum \
 --installroot="${target}" \
 --setopt=tsflags=nodocs \
 --setopt=group_package_types=mandatory \
--y groupinstall Core
+-y install $core_packages
 
 #------------------------------------------------------------------------------
 # Setup networking:
@@ -56,6 +75,12 @@ cat > ${target}/etc/sysconfig/network <<EOF
 NETWORKING=yes
 HOSTNAME=localhost.localdomain
 EOF
+
+#------------------------------------------------------------------------------
+# Setup buildlogs repo:
+#------------------------------------------------------------------------------
+
+echo -e "${repos}" > ${target}/etc/yum.repos.d/centos-buildlogs.repo
 
 #------------------------------------------------------------------------------
 # Minimize total size:
@@ -81,7 +106,7 @@ rm -rf ${target}/var/cache/ldconfig/*
 tar \
 --numeric-owner \
 -c -C $target . | \
-docker import - h0tbird/centos:latest
+docker import - h0tbird/centos-7-qa:latest
 
 #------------------------------------------------------------------------------
 # Cleanup:
