@@ -18,15 +18,9 @@ installonly_limit=5\n\
 distroverpkg=centos-release\n\
 exclude=*.i?86\n\n"
 
-repos="[centos-qa-03]\n\
-name=CentOS Open QA – c7.00.03\n\
-baseurl=http://buildlogs.centos.org/c7.00.03/\n\
-enabled=1\n\
-gpgcheck=0\n\
-\n\
-[centos-qa-04]\n\
-name=CentOS Open QA – c7.00.04\n\
-baseurl=http://buildlogs.centos.org/c7.00.04/\n\
+repos="[centos-pre-release]\n\
+name=CentOS RC 20140614\n\
+baseurl=http://buildlogs.centos.org/centos/7/os/x86_64-20140614/\n\
 enabled=1\n\
 gpgcheck=0"
 
@@ -51,12 +45,6 @@ mknod -m 666 ${target}/dev/urandom c 1 9
 mknod -m 666 ${target}/dev/zero c 1 5
 
 #------------------------------------------------------------------------------
-# Minimal core:
-#------------------------------------------------------------------------------
-
-core_packages='audit basesystem bash biosdevname coreutils cronie curl dhclient e2fsprogs filesystem glibc hostname initscripts iproute iprutils iputils kbd less man-db ncurses openssh-clients openssh-server parted passwd plymouth policycoreutils procps-ng rootfiles rpm rsyslog selinux-policy-targeted setup shadow-utils sudo systemd util-linux vim-minimal yum'
-
-#------------------------------------------------------------------------------
 # Install the core system:
 #------------------------------------------------------------------------------
 
@@ -65,7 +53,7 @@ yum \
 --installroot="${target}" \
 --setopt=tsflags=nodocs \
 --setopt=group_package_types=mandatory \
--y install $core_packages
+-y groupinstall core
 
 #------------------------------------------------------------------------------
 # Setup networking:
@@ -80,7 +68,7 @@ EOF
 # Setup buildlogs repo:
 #------------------------------------------------------------------------------
 
-echo -e "${repos}" > ${target}/etc/yum.repos.d/centos-buildlogs.repo
+echo -e "${repos}" > ${target}/etc/yum.repos.d/centos-rc.repo
 
 #------------------------------------------------------------------------------
 # Minimize total size:
@@ -106,7 +94,7 @@ rm -rf ${target}/var/cache/ldconfig/*
 tar \
 --numeric-owner \
 -c -C $target . | \
-docker import - h0tbird/centos-7-qa:latest
+docker import - h0tbird/centos-7-rc:20140614
 
 #------------------------------------------------------------------------------
 # Cleanup:
