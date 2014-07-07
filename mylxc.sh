@@ -16,7 +16,8 @@ gpgcheck=1\n\
 plugins=1\n\
 installonly_limit=5\n\
 distroverpkg=centos-release\n\
-exclude=*.i?86\n\n"
+exclude=*.i?86\n\
+exclude=iprutils*\n\n"
 
 repos="[centos-pre-release]\n\
 name=CentOS RC 20140614\n\
