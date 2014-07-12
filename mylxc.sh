@@ -6,28 +6,37 @@
 
 yumconf="[main]\n\
 reposdir=/dev/null\n\
-cachedir=/var/cache/yum/\$basearch/\$releasever\n\
+cachedir=/var/cache/yum/x86_64/7\n\
 keepcache=0\n\
 debuglevel=2\n\
 logfile=/var/log/yum.log\n\
 exactarch=1\n\
 obsoletes=1\n\
-gpgcheck=1\n\
 plugins=1\n\
+tsflags=nodocs\n\
+group_package_types=mandatory\n\
 installonly_limit=5\n\
 distroverpkg=centos-release\n\
 exclude=*.i?86\n\
-exclude=iprutils*\n\n"
+exclude=kernel* *firmware os-prober gettext* freetype\n\n"
 
-repos="[centos-pre-release]\n\
-name=CentOS RC 20140614\n\
-baseurl=http://buildlogs.centos.org/centos/7/os/x86_64-20140614/\n\
-enabled=1\n\
-gpgcheck=0"
+repos="[base]\n\
+name=CentOS-7 - Base\n\
+baseurl=http://mirror.centos.org/centos/7/os/x86_64/\n\
+gpgcheck=1\n\
+gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n\
+\n\
+[updates]
+name=CentOS-7 - Updates\n\
+baseurl=http://mirror.centos.org/centos/7/updates/x86_64/\n\
+gpgcheck=1\n\
+gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n"
+
+packages="bind-utils bash yum iputils iproute centos-release shadow-utils less"
 
 set -e
 echo -e "${yumconf}${repos}" > /tmp/yum.conf
-target=$(mktemp -d --tmpdir $(basename $0).XXXXXX)
+target=`mktemp -d --tmpdir $(basename $0).XXXXXX`
 
 #------------------------------------------------------------------------------
 # Setup the needed devices:
@@ -52,24 +61,25 @@ mknod -m 666 ${target}/dev/zero c 1 5
 yum \
 -c /tmp/yum.conf \
 --installroot="${target}" \
---setopt=tsflags=nodocs \
---setopt=group_package_types=mandatory \
--y groupinstall core
+-y install $packages
 
 #------------------------------------------------------------------------------
 # Setup networking:
 #------------------------------------------------------------------------------
 
+mkdir -p ${target}/etc/sysconfig/network-scripts
+
 cat > ${target}/etc/sysconfig/network <<EOF
 NETWORKING=yes
+NETWORKING_IPV6=no
 HOSTNAME=localhost.localdomain
 EOF
 
-#------------------------------------------------------------------------------
-# Setup buildlogs repo:
-#------------------------------------------------------------------------------
-
-echo -e "${repos}" > ${target}/etc/yum.repos.d/centos-rc.repo
+cat > ${target}/etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
+DEVICE=eth0
+BOOTPROTO=dhcp
+ONBOOT=on
+EOF
 
 #------------------------------------------------------------------------------
 # Minimize total size:
@@ -81,9 +91,7 @@ yum \
 -y clean all
 
 rm -rf ${target}/usr/{{lib,share}/locale,{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive}
-rm -rf ${target}/usr/share/{man,doc,info,gnome/help}
-rm -rf ${target}/usr/share/cracklib
-rm -rf ${target}/usr/share/i18n
+rm -rf ${target}/usr/share/{man,doc,info,gnome/help,cracklib,i18n}
 rm -rf ${target}/sbin/sln
 rm -rf ${target}/etc/ld.so.cache
 rm -rf ${target}/var/cache/ldconfig/*
@@ -95,7 +103,7 @@ rm -rf ${target}/var/cache/ldconfig/*
 tar \
 --numeric-owner \
 -c -C $target . | \
-docker import - h0tbird/centos-7-rc:20140614
+docker import - h0tbird/centos:`date +%Y%m%d`
 
 #------------------------------------------------------------------------------
 # Cleanup:
