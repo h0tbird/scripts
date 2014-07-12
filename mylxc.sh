@@ -32,7 +32,7 @@ baseurl=http://mirror.centos.org/centos/7/updates/x86_64/\n\
 gpgcheck=1\n\
 gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n"
 
-packages="bind-utils bash yum iputils iproute centos-release shadow-utils less"
+packages="bind-utils net-tools bash yum iputils iproute centos-release shadow-utils less"
 
 set -e
 echo -e "${yumconf}${repos}" > /tmp/yum.conf
