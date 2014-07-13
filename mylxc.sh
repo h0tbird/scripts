@@ -12,6 +12,7 @@ debuglevel=2\n\
 logfile=/var/log/yum.log\n\
 exactarch=1\n\
 obsoletes=1\n\
+gpgcheck=1\n\
 plugins=1\n\
 tsflags=nodocs\n\
 group_package_types=mandatory\n\
@@ -23,13 +24,11 @@ exclude=kernel* *firmware os-prober gettext* freetype\n\n"
 repos="[base]\n\
 name=CentOS-7 - Base\n\
 baseurl=http://mirror.centos.org/centos/7/os/x86_64/\n\
-gpgcheck=1\n\
 gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n\
 \n\
 [updates]
 name=CentOS-7 - Updates\n\
 baseurl=http://mirror.centos.org/centos/7/updates/x86_64/\n\
-gpgcheck=1\n\
 gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n"
 
 packages="bind-utils hostname bash yum iputils iproute centos-release shadow-utils less"
@@ -80,6 +79,13 @@ DEVICE=eth0
 BOOTPROTO=dhcp
 ONBOOT=on
 EOF
+
+#------------------------------------------------------------------------------
+# Set container /etc/yum.conf
+#------------------------------------------------------------------------------
+
+echo -e "${yumconf}" > ${target}/etc/yum.conf
+sed -i '/reposdir/d' ${target}/etc/yum.conf
 
 #------------------------------------------------------------------------------
 # Minimize total size:
