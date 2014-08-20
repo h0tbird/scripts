@@ -71,11 +71,10 @@ mkdir -p ${target}/etc/sysconfig/network-scripts
 cat > ${target}/etc/sysconfig/network <<EOF
 NETWORKING=yes
 NETWORKING_IPV6=no
-HOSTNAME=localhost.localdomain
 EOF
 
-cat > ${target}/etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
-DEVICE=eth0
+cat > ${target}/etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
+DEVICE=eth1
 BOOTPROTO=dhcp
 ONBOOT=on
 EOF
