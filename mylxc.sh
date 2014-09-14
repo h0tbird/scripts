@@ -1,7 +1,14 @@
 #!/bin/sh
 
 #------------------------------------------------------------------------------
-# Initialization:
+# Initializations:
+#------------------------------------------------------------------------------
+
+set -e
+target=`mktemp -d --tmpdir $(basename $0).XXXXXX`
+
+#------------------------------------------------------------------------------
+# Config Yum:
 #------------------------------------------------------------------------------
 
 yumconf="[main]\n\
@@ -30,11 +37,7 @@ name=CentOS-7 - Updates\n\
 baseurl=http://mirror.centos.org/centos/7/updates/x86_64/\n\
 gpgkey=http://mirror.centos.org/centos/7/os/x86_64/RPM-GPG-KEY-CentOS-7\n"
 
-packages="bind-utils hostname bash yum iputils findutils iproute centos-release shadow-utils less"
-
-set -e
 echo -e "${yumconf}${repos}" > /tmp/yum.conf
-target=`mktemp -d --tmpdir $(basename $0).XXXXXX`
 
 #------------------------------------------------------------------------------
 # Setup the needed devices:
@@ -55,6 +58,8 @@ mknod -m 666 ${target}/dev/zero c 1 5
 #------------------------------------------------------------------------------
 # Install the core system:
 #------------------------------------------------------------------------------
+
+packages="bind-utils hostname bash yum iputils findutils iproute centos-release shadow-utils less"
 
 yum \
 -c /tmp/yum.conf \
@@ -95,12 +100,13 @@ yum \
 -y clean all
 
 #------------------------------------------------------------------------------
-# Strip all languages but EN from locale-archive:
+# Strip all languages but 'en_US' and 'es_ES' from locale-archive:
 #------------------------------------------------------------------------------
 
-chroot ${target} localedef --list-archive | grep -v -i ^en | \
+chroot ${target} localedef --list-archive | egrep -v "en_US|es_ES" | \
 chroot ${target} xargs localedef --delete-from-archive
-chroot ${target} mv /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.tmpl
+cd ${target}/usr/share/locale; ls | egrep -v "locale.alias|en_US|es_ES" | xargs rm -rf
+mv ${target}/usr/lib/locale/locale-archive ${target}/usr/lib/locale/locale-archive.tmpl
 chroot ${target} /usr/sbin/build-locale-archive
 > ${target}/usr/lib/locale/locale-archive.tmpl
 
