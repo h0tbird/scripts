@@ -18,8 +18,7 @@ tsflags=nodocs\n\
 group_package_types=mandatory\n\
 installonly_limit=5\n\
 distroverpkg=centos-release\n\
-exclude=*.i?86\n\
-exclude=kernel* *firmware os-prober gettext* freetype\n\n"
+exclude=*.i?86 kernel* *firmware os-prober gettext* freetype\n\n"
 
 repos="[base]\n\
 name=CentOS-7 - Base\n\
