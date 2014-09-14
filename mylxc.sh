@@ -86,7 +86,7 @@ echo -e "${yumconf}" > ${target}/etc/yum.conf
 sed -i '/reposdir/d' ${target}/etc/yum.conf
 
 #------------------------------------------------------------------------------
-# Minimize total size:
+# Clean Yum cache:
 #------------------------------------------------------------------------------
 
 yum \
@@ -94,8 +94,27 @@ yum \
 --installroot=${target} \
 -y clean all
 
-rm -rf ${target}/usr/{{lib,share}/locale,{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive}
-rm -rf ${target}/usr/share/{man,doc,info,gnome/help,cracklib,i18n}
+#------------------------------------------------------------------------------
+# Strip all languages but EN from locale-archive:
+#------------------------------------------------------------------------------
+
+chroot ${target} localedef --list-archive | grep -v -i ^en | \
+chroot ${target} xargs localedef --delete-from-archive
+chroot ${target} mv /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.tmpl
+chroot ${target} /usr/sbin/build-locale-archive
+> ${target}/usr/lib/locale/locale-archive.tmpl
+
+#------------------------------------------------------------------------------
+# Remove files but leave directories intact since those may be required:
+#------------------------------------------------------------------------------
+
+find ${target}/usr/share/{man,doc,info,cracklib} -type f | xargs /bin/rm
+
+#------------------------------------------------------------------------------
+# Remove more stuff:
+#------------------------------------------------------------------------------
+
+rm -rf ${target}/boot
 rm -rf ${target}/sbin/sln
 rm -rf ${target}/etc/ld.so.cache
 rm -rf ${target}/var/cache/ldconfig/*
