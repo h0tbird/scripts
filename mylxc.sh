@@ -1,8 +1,12 @@
 #!/bin/sh
 
 #------------------------------------------------------------------------------
-# Initializations:
+# Checks and initializations:
 #------------------------------------------------------------------------------
+
+! TAR=`which tar 2> /dev/null` && echo "tar must be installed" && exit 1
+! DOCKER=`which docker 2> /dev/null` && echo "docker must be installed" && exit 1
+! systemctl is-active -q docker && echo "docker must be active" && exit 1
 
 set -e
 target=`mktemp -d --tmpdir $(basename $0).XXXXXX`
@@ -129,10 +133,10 @@ rm -rf ${target}/var/cache/ldconfig/*
 # Generate a tar file and import it:
 #------------------------------------------------------------------------------
 
-tar \
+$TAR \
 --numeric-owner \
 -c -C $target . | \
-docker import - h0tbird/centos:`date +%Y%m%d`
+$DOCKER import - h0tbird/centos:`date +%Y%m%d`
 
 #------------------------------------------------------------------------------
 # Cleanup:
