@@ -140,3 +140,8 @@ docker import - h0tbird/centos:`date +%Y%m%d`
 
 rm -rf $target
 rm -f /tmp/yum.conf
+
+echo -e "\n# Remember to TAG and PUSH:\n"
+echo "vim ~/.dockercfg"
+echo "docker tag h0tbird/centos:`date +%Y%m%d` h0tbird/centos:latest"
+echo "docker push h0tbird/centos"
